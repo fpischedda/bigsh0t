@@ -2,6 +2,7 @@
 #ifndef EMOR_HPP
 #define EMOR_HPP
 
+#include <cstdint>
 #include <vector>
 #include "LUT.hpp"
 
@@ -24,4 +25,4 @@ class EMoR : public LUT {
     std::vector<int32_t> lookupInt;
 };
 
-#endif EMOR_HPP
+#endif

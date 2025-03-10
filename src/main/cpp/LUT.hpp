@@ -8,4 +8,4 @@ class LUT {
     virtual int32_t sampleInt(int32_t pos) const = 0;
 };
 
-#endif EMOR_HPP
+#endif
