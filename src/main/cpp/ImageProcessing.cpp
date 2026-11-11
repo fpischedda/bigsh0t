@@ -280,11 +280,14 @@ uint32_t sampleBilinearWrappedClamped (const uint32_t* frame, double x, double y
     int ax = (int) ((x - ix0) * 128);
     int ay = (int) ((y - iy0) * 128);
 
-    ix0 = WRAP_ANY(ix0, width);
-    ix1 = WRAP_ANY(ix1, width);
+    while (__builtin_expect(ix0 < 0, 0)) ix0 += width;
+    while (__builtin_expect(ix0 >= width, 0)) ix0 -= width;
+    while (__builtin_expect(ix1 < 0, 0)) ix1 += width;
+    while (__builtin_expect(ix1 >= width, 0)) ix1 -= width;
+
     int hm1 = height - 1;
-    iy0 = CLAMP_ANY(iy0, 0, hm1);
-    iy1 = CLAMP_ANY(iy1, 0, hm1);
+    if (iy0 < 0) iy0 = 0; else if (iy0 > hm1) iy0 = hm1;
+    if (iy1 < 0) iy1 = 0; else if (iy1 > hm1) iy1 = hm1;
 
     int iy0w = iy0 * width;
     int iy1w = iy1 * width;

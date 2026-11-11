@@ -260,6 +260,7 @@ Item {
         }
         if (filter.isNew) {
             filter.set("fov", 90);
+            fovStart = fovMiddle = fovEnd = 90;
         } else {
             fovMiddle = filter.getDouble("fov", filter.animateIn);
             if (filter.animateIn > 0)

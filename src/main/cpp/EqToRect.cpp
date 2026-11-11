@@ -69,6 +69,8 @@ class EqToRect : public Frei0rFilter, MPFilter {
                 map = (float*) malloc (2 * width * height * sizeof(float));
             }
             updateMap = true;
+        } else {
+            updateMap = false;
         }
 
         MPFilter::updateMP(this, time, out, in, width, height);
@@ -112,9 +114,17 @@ class EqToRect : public Frei0rFilter, MPFilter {
         Vector3 ray;
         Vector3 ray2;
 
+        double fov_deg = fov;
+        if (fov_deg < 0.1 || std::isnan(fov_deg)) {
+            fov_deg = 90.0;
+        }
+
         Vector3 topLeft;
         topLeft[0] = 1.0;
-        topLeft[1] = -tan(DEG2RADF(fov / 2));
+        topLeft[1] = -tan(DEG2RADF(fov_deg / 2));
+        if (std::isnan(topLeft[1]) || std::abs(topLeft[1]) < 1e-4) {
+            topLeft[1] = -1.0;
+        }
         topLeft[2] = topLeft[1] * height / width;
 
         Vector3 delta;
@@ -123,13 +133,15 @@ class EqToRect : public Frei0rFilter, MPFilter {
         delta[2] = -topLeft[2] / (height / 2);
 
         double fe = fisheye / 100;
+        if (std::isnan(fe) || fe < 0.0) fe = 0.0;
+        else if (fe > 1.0) fe = 1.0;
         double ife = 1.0 - fe;
         double maxdc = sqrt(width * width + height * height) / 2.0;
 
         bool fisheyeEnabled = true;
         bool rectilinearEnabled = true;
 
-        if (fov > 179.9) {
+        if (fov_deg > 179.9) {
             fe = 1.0;
             ife = 0.0;
         }
@@ -180,23 +192,29 @@ class EqToRect : public Frei0rFilter, MPFilter {
 
                 double theta_out = atan2 (ray2[1], ray2[0]);
                 double dxy = sqrt(ray2[0] * ray2[0] + ray2[1] * ray2[1]);
-                double phi_out = atan2 (ray2[2], dxy);
+                double phi_out = atan2 (ray2[2], (dxy > 1e-6) ? dxy : 1e-6);
 
-                xt = w / 2 + (w / 2) * theta_out / M_PI;
-                yt = h / 2 + (h / 2) * phi_out / (M_PI / 2);
+                xt = w / 2.0 + (w / 2.0) * theta_out / M_PI;
+                yt = h / 2.0 + (h / 2.0) * phi_out / (M_PI / 2.0);
 
-                if (xt < 0) {
+                if (std::isnan(xt) || std::isnan(yt)) {
+                    map[midx] = -1.0f;
+                    map[midx + 1] = -1.0f;
+                    continue;
+                }
+
+                while (xt < 0.0) {
                     xt += w;
                 }
-                if (xt >= w) {
+                while (xt >= w) {
                     xt -= w;
                 }
 
-                if (yt < 0) {
-                    yt = 0;
+                if (yt < 0.0) {
+                    yt = 0.0;
                 }
-                if (yt > h - 1) {
-                    yt = h - 1;
+                if (yt > h - 1.0) {
+                    yt = h - 1.0;
                 }
 
                 map[midx] = (float) xt;
